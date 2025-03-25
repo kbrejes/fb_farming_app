@@ -1,13 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Отключаем предупреждения о гидратации
-  suppressHydrationWarning: true,
-  // Другие настройки
   experimental: {
-    // Отключаем автоматически добавляемые классы в режиме разработки
     optimizeCss: false,
   },
+  webpack: (config) => {
+    // Игнорируем проблемные модули
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'undici': false,
+      'webdriverio': false,
+      'appium': false,
+      '@wdio/appium-service': false
+    };
+    return config;
+  }
 }
 
 module.exports = nextConfig 
