@@ -251,13 +251,15 @@ export default function FacebookAutomation() {
         </div>
 
         {/* Правая колонка - визуализация */}
-        <div className="flex justify-center">
+        <div className="flex justify-center items-start">
           {selectedEmulator && (
-            <EmulatorScreen
-              emulator={selectedEmulator}
-              currentAction={currentAction || ''}
-              isRunning={isRunning}
-            />
+            <div className="pt-4">
+              <EmulatorScreen
+                emulator={selectedEmulator}
+                currentAction={currentAction || ''}
+                isRunning={isRunning}
+              />
+            </div>
           )}
         </div>
       </div>

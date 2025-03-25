@@ -84,34 +84,181 @@ const EmulatorScreen: React.FC<EmulatorScreenProps> = ({
 
   if (!emulator || emulator.status !== 'running') {
     return (
-      <div className="flex items-center justify-center h-64 bg-gray-100 rounded-md">
-        <p className="text-gray-500">Эмулятор не запущен</p>
+      <div style={{ 
+        border: '8px solid #222', 
+        borderRadius: '16px', 
+        overflow: 'hidden',
+        width: '300px',
+        height: '600px',
+        position: 'relative',
+        backgroundColor: '#000'
+      }}>
+        <div style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '20px',
+          backgroundColor: '#111',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{ 
+            width: '60px', 
+            height: '10px', 
+            backgroundColor: '#222',
+            borderRadius: '5px'
+          }} />
+        </div>
+        
+        <div style={{ 
+          padding: '30px 10px 10px 10px',
+          height: '100%',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <div style={{ 
+            flex: 1,
+            backgroundColor: '#222',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            position: 'relative',
+            borderRadius: '4px',
+            overflow: 'hidden'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '14px', color: '#666' }}>Facebook</div>
+              <div style={{ fontSize: '12px', color: '#999', marginTop: '5px' }}>Эмулятор не запущен</div>
+            </div>
+          </div>
+          
+          <div style={{ 
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: '10px',
+            gap: '20px'
+          }}>
+            <div style={{ width: '15px', height: '15px', borderRadius: '50%', backgroundColor: '#333' }} />
+            <div style={{ width: '15px', height: '15px', borderRadius: '3px', backgroundColor: '#333' }} />
+            <div style={{ width: '15px', height: '15px', borderRadius: '50%', backgroundColor: '#333' }} />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative">
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-50 rounded-md">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      )}
+    <div style={{ 
+      border: '8px solid #222', 
+      borderRadius: '16px', 
+      overflow: 'hidden',
+      width: '300px',
+      height: '600px',
+      position: 'relative',
+      backgroundColor: '#000'
+    }}>
+      <div style={{ 
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '20px',
+        backgroundColor: '#111',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10
+      }}>
+        <div style={{ 
+          width: '60px', 
+          height: '10px', 
+          backgroundColor: '#222',
+          borderRadius: '5px'
+        }} />
+      </div>
       
-      <img
-        ref={imgRef}
-        alt="Экран эмулятора"
-        className="w-full rounded-md shadow-lg"
-        onLoad={handleImageLoad}
-        onError={handleImageError}
-        style={{ minHeight: "400px", backgroundColor: "#f3f4f6" }}
-      />
-      
-      {isRunning && (
-        <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-md text-sm">
-          {currentAction || 'Выполнение...'}
+      <div style={{ 
+        padding: '30px 10px 10px 10px',
+        height: '100%',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <div style={{ 
+          flex: 1,
+          backgroundColor: '#222',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          position: 'relative',
+          borderRadius: '4px',
+          overflow: 'hidden'
+        }}>
+          {loading && (
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 5
+            }}>
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500" />
+            </div>
+          )}
+          
+          <img
+            ref={imgRef}
+            alt="Экран эмулятора"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+          />
+          
+          {isRunning && (
+            <div style={{ 
+              position: 'absolute',
+              top: '10px',
+              right: '10px',
+              backgroundColor: 'rgba(59, 130, 246, 0.9)',
+              color: 'white',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              zIndex: 6
+            }}>
+              {currentAction}
+            </div>
+          )}
         </div>
-      )}
+        
+        <div style={{ 
+          display: 'flex',
+          justifyContent: 'center',
+          marginTop: '10px',
+          gap: '20px'
+        }}>
+          <div style={{ width: '15px', height: '15px', borderRadius: '50%', backgroundColor: '#333' }} />
+          <div style={{ width: '15px', height: '15px', borderRadius: '3px', backgroundColor: '#333' }} />
+          <div style={{ width: '15px', height: '15px', borderRadius: '50%', backgroundColor: '#333' }} />
+        </div>
+      </div>
     </div>
   );
 };
