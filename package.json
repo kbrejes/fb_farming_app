@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",
+    "@wdio/appium-service": "^9.12.1",
+    "appium": "^2.17.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.3.0",
     "lucide-react": "^0.483.0",
@@ -19,7 +21,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tailwind-merge": "^3.0.2",
-    "tailwindcss": "^3.4.0"
+    "tailwindcss": "^3.4.0",
+    "webdriverio": "^9.12.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

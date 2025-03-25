@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { AccountsList } from '../components/AccountsList';
 import { EmulatorManager } from '../components/EmulatorManager';
 import PhoneManager from '@/components/PhoneManager';
+import { AutomationManager } from '@/components/AutomationManager';
 import type { Account } from '../types';
 
 export default function Home() {
@@ -147,6 +148,7 @@ export default function Home() {
         <div className="space-y-8">
           <EmulatorManager />
           <PhoneManager />
+          <AutomationManager accounts={accounts} />
 
           <div className="grid gap-8 lg:grid-cols-2">
             <div className="space-y-6">
