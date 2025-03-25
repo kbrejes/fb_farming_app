@@ -14,7 +14,11 @@ const nextConfig = {
       '@wdio/appium-service': false
     };
     return config;
-  }
+  },
+  // Принудительно используем порт 3000
+  port: 3000,
+  // Увеличиваем тайм-аут для более стабильной сборки
+  staticPageGenerationTimeout: 180
 }
 
 module.exports = nextConfig 
