@@ -5,7 +5,10 @@ import { AppiumServiceMock } from '@/mocks/appium-service-mock';
 import { AutomationScenarioParams, AutomationResult } from '@/types/automation';
 
 // Используем мок сервиса вместо реального для демонстрации
-const appiumService = AppiumServiceMock.getInstance();
+const USE_MOCK = true;
+const appiumService = USE_MOCK 
+  ? AppiumServiceMock.getInstance() 
+  : AppiumService.getInstance();
 
 /**
  * API-эндпоинт для запуска автоматизации на эмуляторе
@@ -21,49 +24,61 @@ export async function POST(request: Request) {
       );
     }
 
-    // Проверяем, что эмулятор запущен
-    const androidHome = process.env.ANDROID_HOME;
-    if (!androidHome) {
-      return NextResponse.json(
-        { error: 'Переменная окружения ANDROID_HOME не установлена' },
-        { status: 500 }
-      );
+    console.log(`Автоматизация: ${scenarioType} для устройства emulator-${port}`);
+
+    // При использовании мока не нужно проверять реальный эмулятор
+    if (!USE_MOCK) {
+      // Проверяем, что эмулятор запущен
+      const androidHome = process.env.ANDROID_HOME;
+      if (!androidHome) {
+        return NextResponse.json(
+          { error: 'Переменная окружения ANDROID_HOME не установлена' },
+          { status: 500 }
+        );
+      }
+
+      const adbPath = `${androidHome}/platform-tools/adb`;
+      const { exec } = require('child_process');
+      const { promisify } = require('util');
+      const execAsync = promisify(exec);
+
+      // Проверяем статус эмулятора
+      const { stdout: devices } = await execAsync(`${adbPath} devices`);
+      const isEmulatorRunning = devices.includes(`emulator-${port}`);
+
+      if (!isEmulatorRunning) {
+        return NextResponse.json(
+          { error: 'Эмулятор не запущен' },
+          { status: 400 }
+        );
+      }
     }
 
-    const adbPath = `${androidHome}/platform-tools/adb`;
-    const { exec } = require('child_process');
-    const { promisify } = require('util');
-    const execAsync = promisify(exec);
-
-    // Проверяем статус эмулятора
-    const { stdout: devices } = await execAsync(`${adbPath} devices`);
-    const isEmulatorRunning = devices.includes(`emulator-${port}`);
-
-    if (!isEmulatorRunning) {
-      return NextResponse.json(
-        { error: 'Эмулятор не запущен' },
-        { status: 400 }
-      );
-    }
-
-    // Получаем экземпляр сервиса автоматизации
-    const appiumService = AppiumService.getInstance();
-    
     // Создаем сессию для эмулятора
     const sessionId = await appiumService.createSession(`emulator-${port}`);
     
     try {
-      // TODO: Реализовать выполнение сценария
-      // Здесь будет код для выполнения конкретного сценария
+      // Имитируем выполнение действий автоматизации
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      return NextResponse.json({
+      // Имитируем результат выполнения сценария
+      const result: AutomationResult = {
         success: true,
-        message: 'Сценарий успешно выполнен',
-        sessionId,
+        message: `Сценарий "${scenarioType}" успешно выполнен`,
         scenarioType,
         deviceId: `emulator-${port}`,
-        accountId
-      });
+        accountId: accountId || undefined,
+        executionTimeMs: 2000,
+        actions: [
+          { name: 'Запуск приложения', success: true, timeMs: 500 },
+          { name: 'Поиск элементов интерфейса', success: true, timeMs: 300 },
+          { name: 'Ввод данных', success: true, timeMs: 600 },
+          { name: 'Отправка формы', success: true, timeMs: 400 },
+          { name: 'Проверка результата', success: true, timeMs: 200 },
+        ]
+      };
+      
+      return NextResponse.json(result);
     } finally {
       // Закрываем сессию
       await appiumService.closeSession(sessionId);

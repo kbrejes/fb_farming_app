@@ -97,16 +97,19 @@ const randomError = () => {
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * Мок класса AppiumService
+ * Мок-версия сервиса Appium для тестирования и разработки
  */
 export class AppiumServiceMock {
   private static instance: AppiumServiceMock;
   private sessions: Map<string, any> = new Map();
 
   private constructor() {
-    console.log('[MOCK] AppiumService инициализирован');
+    console.log('AppiumServiceMock инициализирован');
   }
 
+  /**
+   * Получает экземпляр сервиса (Singleton паттерн)
+   */
   public static getInstance(): AppiumServiceMock {
     if (!AppiumServiceMock.instance) {
       AppiumServiceMock.instance = new AppiumServiceMock();
@@ -114,24 +117,30 @@ export class AppiumServiceMock {
     return AppiumServiceMock.instance;
   }
 
+  /**
+   * Создает мок-сессию и возвращает идентификатор
+   * @param deviceId имя устройства (например, emulator-5554)
+   */
   async createSession(deviceId: string): Promise<string> {
     console.log(`[MOCK] Создание сессии для устройства ${deviceId}`);
     
-    // Имитация задержки
-    await delay(1500);
-    
-    // Симуляция возможной ошибки
-    if (randomError()) {
-      throw new Error(`Не удалось подключиться к устройству ${deviceId}. Проверьте, что устройство подключено и доступно.`);
-    }
-    
     const sessionId = `mock_session_${Date.now()}`;
-    this.sessions.set(sessionId, { deviceId, createdAt: new Date() });
-    console.log(`[MOCK] Сессия ${sessionId} успешно создана`);
+    this.sessions.set(sessionId, {
+      deviceId,
+      createdAt: new Date().toISOString()
+    });
     
+    // Имитируем задержку сетевого запроса
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    console.log(`[MOCK] Сессия ${sessionId} успешно создана`);
     return sessionId;
   }
-
+  
+  /**
+   * Возвращает мок-сессию по ID
+   * @param sessionId идентификатор сессии
+   */
   getSession(sessionId: string): any {
     const session = this.sessions.get(sessionId);
     if (!session) {
@@ -139,39 +148,44 @@ export class AppiumServiceMock {
     }
     return session;
   }
-
+  
+  /**
+   * Имитирует закрытие сессии
+   * @param sessionId идентификатор сессии
+   */
   async closeSession(sessionId: string): Promise<void> {
     console.log(`[MOCK] Закрытие сессии ${sessionId}`);
     
-    // Имитация задержки
-    await delay(800);
-    
-    // Симуляция возможной ошибки
-    if (randomError()) {
-      throw new Error(`[MOCK] Не удалось закрыть сессию ${sessionId}`);
+    if (!this.sessions.has(sessionId)) {
+      throw new Error(`[MOCK] Сессия с ID ${sessionId} не найдена`);
     }
+    
+    // Имитируем задержку сетевого запроса
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     this.sessions.delete(sessionId);
     console.log(`[MOCK] Сессия ${sessionId} успешно закрыта`);
   }
 
+  /**
+   * Возвращает список всех мок-сессий
+   */
   getSessions(): string[] {
     return Array.from(this.sessions.keys());
   }
 
+  /**
+   * Имитирует закрытие всех сессий
+   */
   async closeAllSessions(): Promise<void> {
-    console.log(`[MOCK] Закрытие всех сессий (${this.sessions.size})`);
+    const sessionIds = this.getSessions();
+    console.log(`[MOCK] Закрытие всех сессий (${sessionIds.length})`);
     
-    // Имитация задержки
-    await delay(1000);
-    
-    // Симуляция возможной ошибки
-    if (randomError()) {
-      throw new Error('[MOCK] Не удалось закрыть все сессии');
-    }
+    // Имитируем задержку сетевого запроса
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     this.sessions.clear();
-    console.log('[MOCK] Все сессии успешно закрыты');
+    console.log(`[MOCK] Все сессии успешно закрыты`);
   }
 
   async executeScenario(scenarioType: string): Promise<any> {

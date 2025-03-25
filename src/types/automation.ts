@@ -3,18 +3,14 @@ import { Browser, Element } from 'webdriverio';
 /**
  * Типы сценариев автоматизации
  */
-export type AutomationScenarioType = 
-  | 'login'             // Вход в аккаунт
-  | 'register'          // Регистрация нового аккаунта
-  | 'browse_feed'       // Просмотр ленты новостей
-  | 'add_friends'       // Добавление друзей
-  | 'post_content'      // Публикация контента
-  | 'message'           // Отправка сообщений
-  | 'join_groups'       // Вступление в группы
-  | 'like_posts'        // Лайки постов
-  | 'comment_posts'     // Комментирование постов
-  | 'update_profile'    // Обновление профиля
-  | 'logout';           // Выход из аккаунта
+export enum AutomationScenarioType {
+  LOGIN = 'login',
+  REGISTER = 'register',
+  BROWSE_FEED = 'browse_feed',
+  LIKE_POSTS = 'like_posts',
+  ADD_FRIENDS = 'add_friends',
+  LOGOUT = 'logout'
+}
 
 /**
  * Настройки сценария автоматизации
@@ -68,38 +64,48 @@ export interface AutomationScenarioSettings {
  * Параметры сценария автоматизации
  */
 export interface AutomationScenarioParams {
-  deviceId: string;          // ID устройства (например, emulator-5554)
-  accountId?: string;        // ID аккаунта в базе данных
-  scenarioType: AutomationScenarioType; // Тип сценария
-  scenarioSettings?: AutomationScenarioSettings; // Настройки сценария
-  
-  // Авторизационные данные (для сценариев login/register)
-  credentials?: {
-    email?: string;
-    phone?: string;
-    password?: string;
-    firstName?: string;
-    lastName?: string;
-    birthDate?: string; // В формате DD.MM.YYYY
-  };
+  /** Тип сценария */
+  scenarioType: string;
+  /** ID устройства */
+  deviceId: string;
+  /** ID аккаунта (опционально) */
+  accountId?: string;
+  /** Порт эмулятора */
+  port: number;
 }
 
 /**
- * Результат выполнения сценария
+ * Информация о выполненном действии
+ */
+export interface ActionResult {
+  /** Название действия */
+  name: string;
+  /** Успешно ли выполнено */
+  success: boolean;
+  /** Время выполнения (мс) */
+  timeMs: number;
+  /** Ошибка (если есть) */
+  error?: string;
+}
+
+/**
+ * Результат выполнения сценария автоматизации
  */
 export interface AutomationResult {
+  /** Успешно ли выполнен сценарий */
   success: boolean;
-  scenarioType: AutomationScenarioType;
-  executionTimeMs: number;
-  error?: string;
-  sessionId?: string;
-  screenshots?: string[];
+  /** Сообщение о результате */
+  message: string;
+  /** Тип сценария */
+  scenarioType: string;
+  /** ID устройства */
   deviceId: string;
+  /** ID аккаунта (опционально) */
   accountId?: string;
-  actions?: {
-    name: string;
-    success: boolean;
-    timeMs: number;
-    error?: string;
-  }[];
+  /** Время выполнения (мс) */
+  executionTimeMs: number;
+  /** Список выполненных действий */
+  actions: ActionResult[];
+  /** Ошибка (если есть) */
+  error?: string;
 } 

@@ -1,4 +1,5 @@
-import { remote } from 'webdriverio';
+// Новый импорт для WebdriverIO v9+
+import * as webdriverio from 'webdriverio';
 
 // Паттерн Singleton для единой точки управления Appium
 export class AppiumService {
@@ -27,7 +28,8 @@ export class AppiumService {
     try {
       console.log(`Создание сессии для устройства ${deviceId}`);
       
-      const browser = await remote({
+      // Используем другой способ вызова remote для WebdriverIO v9+
+      const browser = await webdriverio.remote({
         path: '/wd/hub',
         port: 4723,
         capabilities: {
