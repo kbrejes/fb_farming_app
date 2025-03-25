@@ -28,7 +28,7 @@
 
 1. Клонируйте репозиторий:
 ```bash
-git clone <repository-url>
+git clone git@github.com:kbrejes/fb_farming_app.git
 cd fb_farming_app
 ```
 
