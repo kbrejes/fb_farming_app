@@ -109,10 +109,12 @@ export async function POST(request: Request) {
     // Получаем параметры запроса
     const data = await request.json();
     const service = data.service || 'fb';
+    const country = data.country || '0'; // По умолчанию Россия (0)
+    
+    console.log(`API роут: запрос номера для сервиса ${service} и страны ${country}...`);
     
     // Запрашиваем номер
-    console.log('API роут: запрос номера...');
-    const numberData = await smsService.getNumber(service);
+    const numberData = await smsService.getNumber(service, country);
     
     console.log('API роут: номер успешно получен:', numberData);
     
@@ -128,8 +130,32 @@ export async function POST(request: Request) {
       );
     }
     
+    // Обработка ошибки отсутствия номеров
+    if (error.message && error.message.includes('Нет доступных номеров')) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 404 }
+      );
+    }
+    
     return NextResponse.json(
       { error: error.message || 'Ошибка при получении номера' },
+      { status: 500 }
+    );
+  }
+}
+
+// Маршрут для получения списка доступных стран
+export async function OPTIONS() {
+  console.log('API роут: запрос списка доступных стран');
+  
+  try {
+    const countries = await smsService.getAvailableCountries();
+    return NextResponse.json({ countries });
+  } catch (error: any) {
+    console.error('API роут: ошибка при получении списка стран:', error);
+    return NextResponse.json(
+      { error: 'Ошибка при получении списка стран', countries: [] },
       { status: 500 }
     );
   }

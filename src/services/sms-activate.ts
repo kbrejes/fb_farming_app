@@ -11,7 +11,7 @@ export class SmsActivateService {
   private static instance: SmsActivateService;
   private readonly apiKey: string;
   private readonly baseUrl: string = 'https://api.sms-activate.org/stubs/handler_api.php';
-  private cachedActivations: { id: string; phone: string; status: string; timeLeft: string; code?: string | null }[] = [];
+  private cachedActivations: { id: string; phone: string; status: string; timeLeft: string; code?: string | null; country?: string }[] = [];
   private lastCacheUpdate: number = 0;
   private cacheValidPeriod: number = 5000; // 5 секунд (было 10 секунд)
 
@@ -81,7 +81,73 @@ export class SmsActivateService {
     }
   }
 
-  async getNumber(service: string = 'fb'): Promise<{ id: string; phone: string; status: string; timeLeft: string }> {
+  // Список доступных стран с кодами
+  getAvailableCountries(): Promise<{ id: string; name: string; count: number }[]> {
+    return new Promise(async (resolve) => {
+      try {
+        const url = `${this.baseUrl}?api_key=${this.apiKey}&action=getCountries`;
+        const response = await fetch(url);
+        const text = await response.text();
+        
+        try {
+          const data = JSON.parse(text);
+          
+          if (data && typeof data === 'object') {
+            // Преобразуем объект стран в массив
+            const countries = Object.entries(data).map(([id, country]: [string, any]) => ({
+              id,
+              name: country.eng || country.rus || 'Unknown',
+              count: 0
+            }));
+            
+            console.log(`Получено ${countries.length} стран`);
+            resolve(countries);
+            
+            // После получения стран запрашиваем количество номеров
+            this.getNumbersCount().then(counts => {
+              // Асинхронно обновляем количество номеров для каждой страны
+              console.log('Получены данные о доступных номерах по странам');
+            }).catch(error => {
+              console.error('Ошибка при получении количества номеров:', error);
+            });
+          } else {
+            console.error('Неверный формат данных стран');
+            resolve([]);
+          }
+        } catch (error) {
+          console.error('Ошибка парсинга ответа getCountries:', error);
+          resolve([]);
+        }
+      } catch (error) {
+        console.error('Ошибка при получении списка стран:', error);
+        resolve([]);
+      }
+    });
+  }
+
+  // Получение количества доступных номеров
+  async getNumbersCount(): Promise<any> {
+    try {
+      const url = `${this.baseUrl}?api_key=${this.apiKey}&action=getNumbersStatus&country=all`;
+      const response = await fetch(url);
+      const text = await response.text();
+      
+      try {
+        const data = JSON.parse(text);
+        console.log('Данные о доступных номерах:', data);
+        return data;
+      } catch (error) {
+        console.error('Ошибка парсинга ответа getNumbersStatus:', error);
+        return {};
+      }
+    } catch (error) {
+      console.error('Ошибка при получении количества номеров:', error);
+      return {};
+    }
+  }
+
+  // Получение номера из указанной страны
+  async getNumber(service: string = 'fb', country: string = '0'): Promise<{ id: string; phone: string; status: string; timeLeft: string; country?: string }> {
     // Сначала проверяем баланс, чтобы убедиться, что ключ работает
     try {
       const balance = await this.getBalance();
@@ -97,8 +163,8 @@ export class SmsActivateService {
 
     // Запрашиваем номер для активации
     try {
-      // Создаем простой URL для запроса номера
-      const url = `${this.baseUrl}?api_key=${this.apiKey}&action=getNumber&service=${service}&country=0`;
+      // Создаем URL для запроса номера с указанной страной
+      const url = `${this.baseUrl}?api_key=${this.apiKey}&action=getNumber&service=${service}&country=${country}`;
       console.log('URL запроса номера:', url);
       
       const response = await fetch(url);
@@ -115,7 +181,7 @@ export class SmsActivateService {
       }
       
       if (text === 'NO_NUMBERS') {
-        throw new Error('Нет доступных номеров');
+        throw new Error(`Нет доступных номеров для выбранной страны (код ${country})`);
       }
       
       // Проверяем формат корректного ответа ACCESS_NUMBER:id:phone
@@ -133,11 +199,11 @@ export class SmsActivateService {
       const phone = parts[2];
       
       // Проверяем валидность полученных данных
-      if (!id || !phone || !/^\d+$/.test(id) || !/^\d+$/.test(phone)) {
+      if (!id || !phone || !/^\d+$/.test(id)) {
         throw new Error('Получены некорректные данные номера');
       }
       
-      console.log(`Получен новый номер: ID=${id}, телефон=${phone}`);
+      console.log(`Получен новый номер: ID=${id}, телефон=${phone}, страна=${country}`);
       
       // Создаем активацию в том же формате, что возвращают другие методы
       const now = new Date();
@@ -150,7 +216,8 @@ export class SmsActivateService {
         id,
         phone,
         status: 'waiting',
-        timeLeft
+        timeLeft,
+        country
       };
       
       // Обновляем кеш активаций, добавляя новую
