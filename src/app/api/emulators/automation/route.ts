@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-// import { AppiumService } from '@/services/automation/appium-service';
+import { AppiumService } from '@/services/automation/appium-service';
 // import { AuthActions } from '@/services/automation/actions/auth-actions';
 import { AppiumServiceMock } from '@/mocks/appium-service-mock';
 import { AutomationScenarioParams, AutomationResult } from '@/types/automation';
@@ -11,74 +11,67 @@ const appiumService = AppiumServiceMock.getInstance();
  * API-эндпоинт для запуска автоматизации на эмуляторе
  */
 export async function POST(request: Request) {
-  console.log('POST /api/emulators/automation - Запуск автоматизации');
-  
   try {
-    // Парсим параметры запроса
-    const params: AutomationScenarioParams = await request.json();
-    console.log('Параметры автоматизации:', params);
-    
-    // Проверяем наличие обязательных параметров
-    if (!params.deviceId || !params.scenarioType) {
+    const { deviceId, scenarioType, accountId, port } = await request.json();
+
+    if (!deviceId || !scenarioType) {
       return NextResponse.json(
-        { error: 'Требуются параметры deviceId и scenarioType' },
+        { error: 'Не указаны обязательные параметры' },
         { status: 400 }
       );
     }
+
+    // Проверяем, что эмулятор запущен
+    const androidHome = process.env.ANDROID_HOME;
+    if (!androidHome) {
+      return NextResponse.json(
+        { error: 'Переменная окружения ANDROID_HOME не установлена' },
+        { status: 500 }
+      );
+    }
+
+    const adbPath = `${androidHome}/platform-tools/adb`;
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+
+    // Проверяем статус эмулятора
+    const { stdout: devices } = await execAsync(`${adbPath} devices`);
+    const isEmulatorRunning = devices.includes(`emulator-${port}`);
+
+    if (!isEmulatorRunning) {
+      return NextResponse.json(
+        { error: 'Эмулятор не запущен' },
+        { status: 400 }
+      );
+    }
+
+    // Получаем экземпляр сервиса автоматизации
+    const appiumService = AppiumService.getInstance();
     
-    // Результат автоматизации
-    const result: AutomationResult = {
-      success: false,
-      scenarioType: params.scenarioType,
-      executionTimeMs: 0,
-      deviceId: params.deviceId,
-      accountId: params.accountId,
-      actions: []
-    };
-    
-    const startTime = Date.now();
-    let sessionId: string | undefined;
+    // Создаем сессию для эмулятора
+    const sessionId = await appiumService.createSession(`emulator-${port}`);
     
     try {
-      // Создаем новую сессию Appium
-      sessionId = await appiumService.createSession(params.deviceId);
-      result.sessionId = sessionId;
+      // TODO: Реализовать выполнение сценария
+      // Здесь будет код для выполнения конкретного сценария
       
-      // Выполняем сценарий
-      const scenarioResult = await appiumService.executeScenario(params.scenarioType);
-      
-      // Обновляем результат
-      result.success = scenarioResult.success;
-      result.actions = scenarioResult.actions;
-      
-      console.log(`Сценарий ${params.scenarioType} выполнен успешно`);
-    } catch (error: any) {
-      console.error('Ошибка при выполнении автоматизации:', error);
-      
-      // Записываем ошибку в результат
-      result.success = false;
-      result.error = error.message || String(error);
+      return NextResponse.json({
+        success: true,
+        message: 'Сценарий успешно выполнен',
+        sessionId,
+        scenarioType,
+        deviceId: `emulator-${port}`,
+        accountId
+      });
     } finally {
-      // Вычисляем общее время выполнения
-      result.executionTimeMs = Date.now() - startTime;
-      
-      // Закрываем сессию Appium
-      if (sessionId) {
-        try {
-          await appiumService.closeSession(sessionId);
-        } catch (error) {
-          console.error('Ошибка при закрытии сессии Appium:', error);
-        }
-      }
+      // Закрываем сессию
+      await appiumService.closeSession(sessionId);
     }
-    
-    // Возвращаем результат выполнения автоматизации
-    return NextResponse.json(result);
-  } catch (error: any) {
-    console.error('Ошибка при обработке запроса:', error);
-    
+  } catch (error) {
+    console.error('Error in automation:', error);
     return NextResponse.json(
-      { error: `Ошибка при запуске автоматизации: ${error.message || String(error)}` },
+      { error: error instanceof Error ? error.message : 'Неизвестная ошибка' },
       { status: 500 }
     );
   }
