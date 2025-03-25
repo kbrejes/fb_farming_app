@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
-import { AppiumService } from '@/services/automation/appium-service';
-import { AuthActions } from '@/services/automation/actions/auth-actions';
+// import { AppiumService } from '@/services/automation/appium-service';
+// import { AuthActions } from '@/services/automation/actions/auth-actions';
+import { AppiumServiceMock } from '@/mocks/appium-service-mock';
 import { AutomationScenarioParams, AutomationResult } from '@/types/automation';
+
+// Используем мок сервиса вместо реального для демонстрации
+const appiumService = AppiumServiceMock.getInstance();
 
 /**
  * API-эндпоинт для запуска автоматизации на эмуляторе
@@ -22,9 +26,6 @@ export async function POST(request: Request) {
       );
     }
     
-    // Подключаемся к сервису Appium
-    const appiumService = AppiumService.getInstance();
-    
     // Результат автоматизации
     const result: AutomationResult = {
       success: false,
@@ -43,86 +44,14 @@ export async function POST(request: Request) {
       sessionId = await appiumService.createSession(params.deviceId);
       result.sessionId = sessionId;
       
-      // Получаем драйвер для сессии
-      const driver = appiumService.getSession(sessionId);
+      // Выполняем сценарий
+      const scenarioResult = await appiumService.executeScenario(params.scenarioType);
       
-      // Выполняем сценарий в зависимости от типа
-      if (params.scenarioType === 'login') {
-        // Проверяем наличие учетных данных
-        if (!params.credentials?.email || !params.credentials?.password) {
-          throw new Error('Для входа в аккаунт требуются email и пароль');
-        }
-        
-        // Создаем экземпляр класса для действий авторизации
-        const authActions = new AuthActions(driver);
-        
-        // Запускаем сценарий входа
-        const actionStartTime = Date.now();
-        await authActions.loginToFacebook(params.credentials.email, params.credentials.password);
-        
-        // Записываем результат действия
-        result.actions?.push({
-          name: 'loginToFacebook',
-          success: true,
-          timeMs: Date.now() - actionStartTime
-        });
-        
-        // Помечаем весь сценарий как успешный
-        result.success = true;
-      } else if (params.scenarioType === 'register') {
-        // Проверяем наличие учетных данных
-        if (
-          !params.credentials?.email ||
-          !params.credentials?.password ||
-          !params.credentials?.firstName ||
-          !params.credentials?.lastName ||
-          !params.credentials?.birthDate
-        ) {
-          throw new Error('Для регистрации аккаунта требуются все учетные данные');
-        }
-        
-        // Создаем экземпляр класса для действий авторизации
-        const authActions = new AuthActions(driver);
-        
-        // Запускаем сценарий регистрации
-        const actionStartTime = Date.now();
-        await authActions.registerFacebookAccount(
-          params.credentials.firstName,
-          params.credentials.lastName,
-          params.credentials.email,
-          params.credentials.password,
-          params.credentials.birthDate
-        );
-        
-        // Записываем результат действия
-        result.actions?.push({
-          name: 'registerFacebookAccount',
-          success: true,
-          timeMs: Date.now() - actionStartTime
-        });
-        
-        // Помечаем весь сценарий как успешный
-        result.success = true;
-      } else if (params.scenarioType === 'logout') {
-        // Создаем экземпляр класса для действий авторизации
-        const authActions = new AuthActions(driver);
-        
-        // Запускаем сценарий выхода
-        const actionStartTime = Date.now();
-        await authActions.logoutFromFacebook();
-        
-        // Записываем результат действия
-        result.actions?.push({
-          name: 'logoutFromFacebook',
-          success: true,
-          timeMs: Date.now() - actionStartTime
-        });
-        
-        // Помечаем весь сценарий как успешный
-        result.success = true;
-      } else {
-        throw new Error(`Сценарий ${params.scenarioType} пока не реализован`);
-      }
+      // Обновляем результат
+      result.success = scenarioResult.success;
+      result.actions = scenarioResult.actions;
+      
+      console.log(`Сценарий ${params.scenarioType} выполнен успешно`);
     } catch (error: any) {
       console.error('Ошибка при выполнении автоматизации:', error);
       
@@ -162,9 +91,6 @@ export async function GET(request: Request) {
   console.log('GET /api/emulators/automation - Получение списка активных сессий');
   
   try {
-    // Получаем сервис Appium
-    const appiumService = AppiumService.getInstance();
-    
     // Получаем список активных сессий
     const sessions = appiumService.getSessions();
     
@@ -189,9 +115,6 @@ export async function DELETE(request: Request) {
   console.log('DELETE /api/emulators/automation - Закрытие всех активных сессий');
   
   try {
-    // Получаем сервис Appium
-    const appiumService = AppiumService.getInstance();
-    
     // Закрываем все активные сессии
     await appiumService.closeAllSessions();
     

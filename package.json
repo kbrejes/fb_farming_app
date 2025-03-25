@@ -28,6 +28,7 @@
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "appium-uiautomator2-driver": "^4.1.5",
     "autoprefixer": "^10.0.1",
     "dependency-cruiser": "^16.10.0",
     "postcss": "^8.4.35",
