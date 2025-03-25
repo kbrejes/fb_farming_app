@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Emulator } from '@/types/emulator';
 
 interface EmulatorScreenProps {
@@ -14,33 +14,65 @@ const EmulatorScreen: React.FC<EmulatorScreenProps> = ({
   currentAction,
   isRunning,
 }) => {
-  const [screenUrl, setScreenUrl] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
+  // Функция для обновления изображения
+  const updateScreenshot = async () => {
     if (!emulator || emulator.status !== 'running') {
-      setScreenUrl('');
+      setLoading(false);
       return;
     }
 
-    // Подключаемся к WebSocket для стриминга экрана
-    const ws = new WebSocket(`ws://localhost:${emulator.port}/screen`);
+    try {
+      // Обновляем параметр timestamp для обхода кэширования
+      const timestamp = new Date().getTime();
+      const url = `/api/emulators/${emulator.id}/screen?t=${timestamp}`;
+      
+      if (imgRef.current) {
+        // Устанавливаем новый src для изображения
+        imgRef.current.src = url;
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('Ошибка при обновлении скриншота:', err);
+      setError('Не удалось получить изображение с эмулятора');
+      setLoading(false);
+    }
+  };
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'screen') {
-        setScreenUrl(data.url);
+  useEffect(() => {
+    // При монтировании компонента начинаем обновлять скриншот
+    if (emulator && emulator.status === 'running') {
+      setLoading(true);
+      
+      // Сразу загружаем первый скриншот
+      updateScreenshot();
+      
+      // Настраиваем интервал обновления (каждые 1000 мс)
+      timerRef.current = setInterval(updateScreenshot, 1000);
+    }
+
+    // При размонтировании компонента очищаем интервал
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
       }
     };
-
-    ws.onerror = () => {
-      setError('Ошибка подключения к стримингу экрана');
-    };
-
-    return () => {
-      ws.close();
-    };
   }, [emulator]);
+
+  // Обработчик успешной загрузки изображения
+  const handleImageLoad = () => {
+    setLoading(false);
+  };
+
+  // Обработчик ошибки загрузки изображения
+  const handleImageError = () => {
+    setError('Не удалось загрузить изображение с эмулятора');
+    setLoading(false);
+  };
 
   if (error) {
     return (
@@ -50,28 +82,34 @@ const EmulatorScreen: React.FC<EmulatorScreenProps> = ({
     );
   }
 
-  if (!screenUrl) {
+  if (!emulator || emulator.status !== 'running') {
     return (
       <div className="flex items-center justify-center h-64 bg-gray-100 rounded-md">
-        <p className="text-gray-500">
-          {emulator.status === 'running'
-            ? 'Загрузка экрана...'
-            : 'Эмулятор не запущен'}
-        </p>
+        <p className="text-gray-500">Эмулятор не запущен</p>
       </div>
     );
   }
 
   return (
     <div className="relative">
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-50 rounded-md">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      )}
+      
       <img
-        src={screenUrl}
+        ref={imgRef}
         alt="Экран эмулятора"
         className="w-full rounded-md shadow-lg"
+        onLoad={handleImageLoad}
+        onError={handleImageError}
+        style={{ minHeight: "400px", backgroundColor: "#f3f4f6" }}
       />
+      
       {isRunning && (
         <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-md text-sm">
-          {currentAction}
+          {currentAction || 'Выполнение...'}
         </div>
       )}
     </div>

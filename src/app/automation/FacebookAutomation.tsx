@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Emulator } from '@/types/emulator';
 import EmulatorSelector from '@/components/automation/EmulatorSelector';
+import EmulatorScreen from '@/components/automation/EmulatorScreen';
 
 // Типы сценариев
 const SCENARIOS = [
@@ -34,138 +35,6 @@ interface ExecutionResult {
     timeMs: number;
   }>;
   error?: string;
-}
-
-// Компонент для отображения экрана эмулятора
-function EmulatorScreen({ running, scenarioType, currentAction }: { 
-  running: boolean;
-  scenarioType: string;
-  currentAction?: string;
-}) {
-  const [screenUrl, setScreenUrl] = useState('/images/emulator_screens/home.png');
-  
-  useEffect(() => {
-    if (running) {
-      if (scenarioType === 'login') {
-        setScreenUrl('/images/emulator_screens/login.png');
-      } else if (scenarioType === 'register') {
-        setScreenUrl('/images/emulator_screens/register.png');
-      } else if (scenarioType === 'browse_feed') {
-        setScreenUrl('/images/emulator_screens/feed.png');
-      } else {
-        setScreenUrl('/images/emulator_screens/default.png');
-      }
-    } else {
-      setScreenUrl('/images/emulator_screens/home.png');
-    }
-  }, [running, scenarioType, currentAction]);
-
-  return (
-    <div style={{ 
-      border: '8px solid #222', 
-      borderRadius: '16px', 
-      overflow: 'hidden',
-      width: '300px',
-      height: '600px',
-      position: 'relative',
-      backgroundColor: '#000'
-    }}>
-      <div style={{ 
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '20px',
-        backgroundColor: '#111',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{ 
-          width: '60px', 
-          height: '10px', 
-          backgroundColor: '#222',
-          borderRadius: '5px'
-        }} />
-      </div>
-      
-      {/* Тело эмулятора */}
-      <div style={{ 
-        padding: '30px 10px 10px 10px',
-        height: '100%',
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        {/* Экран - здесь в реальном приложении можно показывать скриншоты с эмулятора */}
-        <div style={{ 
-          flex: 1,
-          backgroundColor: '#fff',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          position: 'relative',
-          borderRadius: '4px',
-          overflow: 'hidden'
-        }}>
-          {running ? (
-            <>
-              <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-                <div style={{ 
-                  fontSize: '12px',
-                  color: '#333',
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  position: 'absolute',
-                  top: '10px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  zIndex: 10
-                }}>
-                  {currentAction || `Выполняется: ${scenarioType}`}
-                </div>
-              </div>
-              <div style={{ 
-                position: 'absolute', 
-                top: 0, 
-                left: 0, 
-                width: '100%', 
-                height: '100%',
-                backgroundColor: '#f0f0f0',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}>
-                <p>Симуляция экрана эмулятора</p>
-                <div style={{ position: 'absolute', bottom: '10px', right: '10px', fontSize: '10px' }}>
-                  {scenarioType}
-                </div>
-              </div>
-            </>
-          ) : (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '14px', color: '#666' }}>Facebook</div>
-              <div style={{ fontSize: '12px', color: '#999', marginTop: '5px' }}>Эмулятор не запущен</div>
-            </div>
-          )}
-        </div>
-        
-        {/* Навигационные кнопки */}
-        <div style={{ 
-          display: 'flex',
-          justifyContent: 'center',
-          marginTop: '10px',
-          gap: '20px'
-        }}>
-          <div style={{ width: '15px', height: '15px', borderRadius: '50%', backgroundColor: '#333' }} />
-          <div style={{ width: '15px', height: '15px', borderRadius: '3px', backgroundColor: '#333' }} />
-          <div style={{ width: '15px', height: '15px', borderRadius: '50%', backgroundColor: '#333' }} />
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function FacebookAutomation() {
@@ -383,11 +252,13 @@ export default function FacebookAutomation() {
 
         {/* Правая колонка - визуализация */}
         <div className="flex justify-center">
-          <EmulatorScreen
-            running={isRunning}
-            scenarioType={selectedScenarioId}
-            currentAction={currentAction}
-          />
+          {selectedEmulator && (
+            <EmulatorScreen
+              emulator={selectedEmulator}
+              currentAction={currentAction || ''}
+              isRunning={isRunning}
+            />
+          )}
         </div>
       </div>
     </div>
