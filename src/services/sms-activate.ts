@@ -143,4 +143,70 @@ export class SmsActivateService {
       throw new Error('Failed to set status');
     }
   }
+
+  async getActiveActivations(): Promise<{ id: string; phone: string; status: string; timeLeft: string }[]> {
+    try {
+      // Создаем URL для запроса активных активаций
+      const url = `${this.baseUrl}?api_key=${this.apiKey}&action=getActiveActivations`;
+      console.log('URL запроса активных активаций:', url);
+      
+      const response = await fetch(url);
+      const text = await response.text();
+      console.log('Ответ API getActiveActivations:', text);
+      
+      // Если нет активаций или произошла ошибка, возвращаем пустой массив
+      if (text === 'NO_ACTIVATIONS' || text === 'BAD_KEY' || text === 'ERROR_SQL') {
+        return [];
+      }
+      
+      try {
+        // Если получен JSON, парсим его
+        const data = JSON.parse(text);
+        // Преобразуем объект с активациями в массив и форматируем для нашего компонента
+        const activations = Object.entries(data).map(([id, activation]: [string, any]) => {
+          const phone = activation.phone || 'Неизвестно';
+          const status = this.mapStatus(activation.status || '1');
+          const timeCreated = new Date(activation.time * 1000).toISOString();
+          
+          // Рассчитываем оставшееся время (обычно 20 минут от создания)
+          const createdTime = new Date(activation.time * 1000);
+          const expiryTime = new Date(createdTime.getTime() + 20 * 60 * 1000); // +20 минут
+          const now = new Date();
+          const diffMinutes = Math.floor((expiryTime.getTime() - now.getTime()) / (60 * 1000));
+          const diffSeconds = Math.floor(((expiryTime.getTime() - now.getTime()) % (60 * 1000)) / 1000);
+          const timeLeft = diffMinutes > 0 ? `${diffMinutes}:${diffSeconds.toString().padStart(2, '0')}` : '0:00';
+          
+          return {
+            id,
+            phone,
+            status,
+            timeLeft
+          };
+        });
+        
+        return activations;
+      } catch (err) {
+        console.error('Ошибка парсинга ответа:', err);
+        return [];
+      }
+    } catch (error) {
+      console.error('Ошибка getActiveActivations:', error);
+      return [];
+    }
+  }
+
+  // Преобразование статуса активации из числового кода в текстовое представление
+  private mapStatus(status: string): string {
+    switch (status) {
+      case '1': return 'waiting';
+      case '2': return 'waiting';
+      case '3': return 'code_received';
+      case '4': return 'finished';
+      case '5': return 'canceled';
+      case '6': return 'waiting';
+      case '7': return 'waiting';
+      case '8': return 'canceled';
+      default: return 'waiting';
+    }
+  }
 } 

@@ -5,7 +5,21 @@ import { SmsActivateService } from '@/services/sms-activate';
 const smsService = SmsActivateService.getInstance();
 
 export async function GET() {
-  return NextResponse.json({ activeActivations: [] });
+  console.log('API роут: GET запрос для получения активных активаций');
+  
+  try {
+    // Получаем активные активации
+    const activations = await smsService.getActiveActivations();
+    console.log('API роут: Получено активаций:', activations.length);
+    
+    return NextResponse.json({ activeActivations: activations });
+  } catch (error) {
+    console.error('API роут: ошибка при получении активаций:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Ошибка при получении активаций', activeActivations: [] },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: Request) {
